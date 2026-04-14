@@ -499,8 +499,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ── Game State ────────────────────────────────
 async function loadGameState() {
   try {
-    const url = `${GAS_URL}?action=getState&player_code=${encodeURIComponent(student.player_code)}`;
-    const res  = await fetch(url);
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'getState', player_code: student.player_code }),
+    });
     const data = await res.json();
     if (data.ok && data.state) {
       gameState = data.state;
@@ -525,8 +528,11 @@ function renderState(state) {
 // ── Load History ──────────────────────────────
 async function loadHistory() {
   try {
-    const url = `${GAS_URL}?action=getHistory&name=${encodeURIComponent(student.name)}&player_code=${encodeURIComponent(student.player_code)}`;
-    const res  = await fetch(url);
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'getHistory', name: student.name, player_code: student.player_code }),
+    });
     const data = await res.json();
     if (data.ok && Array.isArray(data.history) && data.history.length > 0) {
       document.getElementById('emptyState').style.display = 'none';

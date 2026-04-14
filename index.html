@@ -289,8 +289,12 @@ async function doLogin() {
   setLoading(true);
 
   try {
-    const url = `${GAS_URL}?action=login&name=${encodeURIComponent(name)}&player_code=${encodeURIComponent(player_code)}`;
-    const res  = await fetch(url);
+    // ⚠️ 所有呼叫一律用 POST + text/plain 避免 CORS 302 redirect 問題
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'login', name, player_code }),
+    });
     const data = await res.json();
 
     if (!data.ok) {
