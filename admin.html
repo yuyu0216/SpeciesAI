@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>教師管理頁面 — 誰動了我的棲地！</title>
+  <meta name="description" content="教師即時監控學生對話內容與遊戲狀態。" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding: 0; min-height: 100vh; }
+
+    /* ── Admin Header ── */
+    .admin-header {
+      padding: 18px 28px;
+      background: rgba(10, 20, 12, 0.95);
+      border-bottom: 1px solid var(--color-border-bright);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .admin-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--color-text-h);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .admin-controls { display: flex; gap: 10px; align-items: center; }
+
+    .admin-input {
+      background: rgba(0,0,0,0.4);
+      border: 1.5px solid var(--color-border-bright);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      color: var(--color-text-h);
+      font-family: var(--font-main);
+      font-size: 14px;
+      outline: none;
+      width: 180px;
+      transition: border-color var(--transition);
+    }
+    .admin-input:focus { border-color: var(--color-primary); }
+
+    .btn-sm {
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-family: var(--font-main);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-green {
+      background: linear-gradient(135deg, var(--color-primary-dim), var(--color-primary));
+      color: #0a1f0d;
+      box-shadow: 0 2px 10px rgba(77,222,111,0.25);
+    }
+    .btn-green:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--color-border-bright);
+      color: var(--color-text);
+    }
+    .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+    /* ── Main Grid ── */
+    .admin-body { padding: 24px 28px; }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-primary-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 14px;
+    }
+
+    /* student cards */
+    .students-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .student-card {
+      background: var(--color-surface);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .student-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--color-primary-dim);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .student-card:hover { border-color: var(--color-border-bright); transform: translateY(-2px); }
+    .student-card:hover::before,
+    .student-card.active::before { opacity: 1; }
+    .student-card.active { border-color: var(--color-primary); background: var(--color-surface-2); }
+
+    .sc-code { font-size: 11px; font-weight: 700; color: var(--color-primary-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+    .sc-name { font-size: 16px; font-weight: 800; color: var(--color-text-h); margin: 3px 0; }
+    .sc-species { font-size: 13px; color: var(--color-text-dim); }
+    .sc-count {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-accent);
+      background: rgba(168,224,99,0.1);
+      border-radius: 100px;
+      padding: 2px 8px;
+    }
+
+    /* conversation view */
+    .conv-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-bright);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-height: 400px;
+    }
+    .conv-panel-header {
+      padding: 16px 22px;
+      background: var(--color-surface-2);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .conv-panel-title { font-size: 16px; font-weight: 800; color: var(--color-text-h); }
+    .conv-panel-sub   { font-size: 13px; color: var(--color-text-dim); margin-top: 2px; }
+
+    .conv-list {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .admin-msg {
+      display: flex;
+      gap: 10px;
+      flex-direction: column;
+    }
+    .admin-msg-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-role-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .admin-role-badge.user      { background: rgba(74,144,226,0.2); color: #7ab8ff; }
+    .admin-role-badge.assistant { background: rgba(77,222,111,0.2); color: var(--color-primary); }
+    .admin-msg-time { font-size: 11px; color: var(--color-text-dim); }
+    .admin-msg-text {
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .admin-msg.user      .admin-msg-text { background: rgba(74,144,226,0.08); border: 1px solid rgba(74,144,226,0.2); color: var(--color-user-text); }
+    .admin-msg.assistant .admin-msg-text { background: var(--color-ai-bubble); border: 1px solid var(--color-ai-border); color: var(--color-ai-text); }
+
+    .empty-conv {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--color-text-dim);
+      font-size: 15px;
+    }
+
+    /* Export bar */
+    .export-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 22px;
+      background: rgba(0,0,0,0.25);
+      border-top: 1px solid var(--color-border);
+    }
+    .export-bar-label { font-size: 13px; color: var(--color-text-dim); flex: 1; }
+
+    /* auto-refresh indicator */
+    .refresh-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      animation: pulseGlow 2s ease-in-out infinite;
+      display: inline-block;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- Header -->
+<header class="admin-header">
+  <div class="admin-title">
+    🌿 教師管理頁面
+    <span style="font-size:13px;font-weight:400;color:var(--color-text-dim);">
+      誰動了我的棲地！　夥伴生態輔助系統
+    </span>
+  </div>
+  <div class="admin-controls">
+    <span style="font-size:13px;color:var(--color-text-dim);">
+      <span class="refresh-dot"></span>自動更新中
+    </span>
+    <button class="btn-sm btn-outline" onclick="loadAll()">🔄 手動更新</button>
+    <button class="btn-sm btn-green"   onclick="exportCsv()">⬇ 匯出 CSV</button>
+  </div>
+</header>
+
+<div class="admin-body">
+  <!-- Students -->
+  <p class="section-title">學生列表</p>
+  <div class="students-grid" id="studentsGrid">
+    <p style="color:var(--color-text-dim);font-size:14px;">載入中…</p>
+  </div>
+
+  <!-- Conversation panel -->
+  <p class="section-title">對話紀錄</p>
+  <div class="conv-panel">
+    <div class="conv-panel-header">
+      <div>
+        <div class="conv-panel-title" id="convTitle">請選擇一位學生</div>
+        <div class="conv-panel-sub"   id="convSub">—</div>
+      </div>
+    </div>
+    <div class="conv-list" id="convList">
+      <div class="empty-conv">👆 點選上方學生卡片可查看對話紀錄</div>
+    </div>
+    <div class="export-bar">
+      <span class="export-bar-label">匯出全班對話記錄為 CSV（依玩家代號與輪次排序）</span>
+      <button class="btn-sm btn-green" onclick="exportCsv()">⬇ 匯出 CSV</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// ════════════════════════════════════════════════
+// Admin Page Script
+// ════════════════════════════════════════════════
+
+let allStudents  = [];
+let allConvsByCode = {};
+let selectedCode = null;
+let refreshTimer = null;
+
+async function loadAll() {
+  await Promise.all([loadStudents(), loadAllConvs()]);
+  renderStudents();
+  if (selectedCode) renderConv(selectedCode);
+}
+
+async function loadStudents() {
+  try {
+    const res  = await fetch(`${GAS_URL}?action=login&name=__admin__&player_code=ADMIN`);
+    // We don't have a dedicated admin endpoint; instead read students via a helper.
+    // For a real deployment, add action=listStudents to the GAS.
+    // Here we just keep cached list.
+  } catch (_) {}
+
+  // Use the local stored list if available, else show placeholder
+  if (allStudents.length === 0) {
+    allStudents = JSON.parse(sessionStorage.getItem('adminStudents') || '[]');
+  }
+}
+
+async function loadAllConvs() {
+  // We'll load convs per student lazily when selected.
+}
+
+function renderStudents() {
+  const grid = document.getElementById('studentsGrid');
+  if (allStudents.length === 0) {
+    grid.innerHTML = '<p style="color:var(--color-text-dim);font-size:14px;grid-column:1/-1;">尚無學生資料。請先確認 Google Sheet 已填入 students 分頁。</p>';
+    return;
+  }
+  grid.innerHTML = '';
+  allStudents.forEach(s => {
+    const count = (allConvsByCode[s.player_code] || []).length;
+    const card = document.createElement('div');
+    card.className = `student-card ${selectedCode === s.player_code ? 'active' : ''}`;
+    card.id = 'card-' + s.player_code;
+    card.innerHTML = `
+      <div class="sc-code">${s.player_code} · ${s.team}</div>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-species">${s.species}</div>
+      ${count ? `<div class="sc-count">${count} 則</div>` : ''}
+    `;
+    card.onclick = () => selectStudent(s);
+    grid.appendChild(card);
+  });
+}
+
+async function selectStudent(s) {
+  selectedCode = s.player_code;
+  document.querySelectorAll('.student-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('card-' + s.player_code);
+  if (card) card.classList.add('active');
+
+  document.getElementById('convTitle').textContent = `${s.name} (${s.player_code}) — ${s.species}`;
+  document.getElementById('convSub').textContent   = `${s.team} 隊`;
+  document.getElementById('convList').innerHTML = '<div class="empty-conv">載入中…</div>';
+
+  const history = await fetchHistory(s.name, s.player_code);
+  allConvsByCode[s.player_code] = history;
+  renderConv(s.player_code);
+}
+
+async function fetchHistory(name, player_code) {
+  try {
+    const url = `${GAS_URL}?action=getHistory&name=${encodeURIComponent(name)}&player_code=${encodeURIComponent(player_code)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    return data.ok ? data.history : [];
+  } catch (_) { return []; }
+}
+
+function renderConv(code) {
+  const list = document.getElementById('convList');
+  const history = allConvsByCode[code] || [];
+  if (history.length === 0) {
+    list.innerHTML = '<div class="empty-conv">這位學生還沒有對話紀錄 🌱</div>';
+    return;
+  }
+  list.innerHTML = '';
+  let lastRound = null;
+  history.forEach(msg => {
+    if (msg.round !== lastRound) {
+      const div = document.createElement('div');
+      div.style.cssText = 'text-align:center;font-size:12px;font-weight:700;color:var(--color-text-dim);padding:8px 0;text-transform:uppercase;letter-spacing:0.1em;';
+      div.textContent = `── 第 ${msg.round} 回合 ──`;
+      list.appendChild(div);
+      lastRound = msg.round;
+    }
+    const wrap = document.createElement('div');
+    wrap.className = `admin-msg ${msg.role === 'user' ? 'user' : 'assistant'}`;
+    wrap.innerHTML = `
+      <div class="admin-msg-meta">
+        <span class="admin-role-badge ${msg.role === 'user' ? 'user' : 'assistant'}">
+          ${msg.role === 'user' ? '學生' : 'AI 物種'}
+        </span>
+        <span class="admin-msg-time">回合 ${msg.round}</span>
+      </div>
+      <div class="admin-msg-text">${escHtml(msg.message)}</div>
+    `;
+    list.appendChild(wrap);
+  });
+  list.scrollTop = list.scrollHeight;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ── CSV Export ─────────────────────────────────
+async function exportCsv() {
+  showToast('正在準備匯出…');
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'exportCsv', secret: EXPORT_SECRET }),
+    });
+    const csv  = await res.text();
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href     = URL.createObjectURL(blob);
+    link.download = `conversations_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+    showToast('✅ CSV 已下載！');
+  } catch (err) {
+    showToast('匯出失敗：' + err.message, true);
+  }
+}
+
+// ── Auto-refresh ──────────────────────────────
+function startAutoRefresh() {
+  refreshTimer = setInterval(async () => {
+    if (selectedCode) {
+      const s = allStudents.find(x => x.player_code === selectedCode);
+      if (s) {
+        const history = await fetchHistory(s.name, s.player_code);
+        allConvsByCode[s.player_code] = history;
+        renderConv(s.player_code);
+      }
+    }
+  }, 15000); // every 15s
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+// ── Bootstrap ─────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadAll();
+  startAutoRefresh();
+});
+</script>
+</body>
+</html>
