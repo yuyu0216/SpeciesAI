@@ -147,6 +147,7 @@
       line-height: 1.6;
       display: -webkit-box;
       -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -389,9 +390,10 @@
 <!-- ── Header ── -->
 <header class="chat-header" id="chatHeader">
   <div class="header-left">
-    <div class="species-avatar" id="speciesAvatar">🌿</div>
+    <!-- 固定顯示神秘問號，不透露物種 -->
+    <div class="species-avatar">🌿</div>
     <div class="header-info">
-      <div class="header-name" id="headerSpecies">載入中…</div>
+      <div class="header-name" id="headerTitle">神秘夥伴</div>
       <div class="header-code" id="headerCode">—</div>
     </div>
   </div>
@@ -401,13 +403,12 @@
   </div>
 </header>
 
-<!-- ── Species Info Panel ── -->
+<!-- ── Clue Panel (不顯示物種名稱，只顯示身體感知線索) ── -->
 <section class="species-panel" id="speciesPanel">
-  <div class="species-emoji-big" id="panelEmoji">🍃</div>
+  <div class="species-emoji-big">🔍</div>
   <div class="species-info">
-    <div class="species-name-label">你的物種身份</div>
-    <div class="species-name" id="panelSpeciesName">載入中…</div>
-    <div class="species-body-desc" id="panelBodyDesc">正在連接你的物種夥伴…</div>
+    <div class="species-name-label">夥伴說的話</div>
+    <div class="species-body-desc" id="panelBodyDesc">正在連接你的神秘夥伴…</div>
   </div>
   <div class="panel-stats" id="panelStats">
     <div class="stat-row">
@@ -484,14 +485,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (!raw) { window.location.href = 'index.html'; return; }
   student = JSON.parse(raw);
 
-  // Render static info
-  const emoji = speciesEmoji(student.species);
-  document.getElementById('speciesAvatar').textContent  = emoji;
-  document.getElementById('headerSpecies').textContent  = student.species;
-  document.getElementById('headerCode').textContent     = `${student.name} · ${student.player_code}`;
-  document.getElementById('panelEmoji').textContent     = emoji;
-  document.getElementById('panelSpeciesName').textContent = student.species;
-  document.getElementById('panelBodyDesc').textContent  = student.bodyDesc || '正在感知這片棲地…';
+  // 只顯示姓名與代號，不顯示物種名稱或圖示（讓學生自己猜）
+  document.getElementById('headerCode').textContent    = `${student.name} · ${student.player_code}`;
+  document.getElementById('panelBodyDesc').textContent = student.bodyDesc || '正在感知這片棲地…';
 
   // Load game state & history in parallel
   await Promise.all([
@@ -569,9 +565,11 @@ async function sendMessage() {
 
   try {
     showNetworkBanner(true);
+    // ⚠️ Content-Type 必須用 text/plain 才能避免 CORS preflight
+    // GAS 的 doPost 仍可正常用 JSON.parse(e.postData.contents) 讀取
     const res  = await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         action:      'chat',
         name:        student.name,
@@ -614,7 +612,8 @@ function appendBubble(role, text, animate, round) {
 
   const avatar = document.createElement('div');
   avatar.className = 'msg-avatar';
-  avatar.textContent = role === 'user' ? '🙋' : speciesEmoji(student.species);
+  // 永遠使用神秘葉子圖示，不透露物種 emoji
+  avatar.textContent = role === 'user' ? '🙋' : '🌿';
 
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
@@ -651,7 +650,8 @@ function showTyping() {
 
   const avatar = document.createElement('div');
   avatar.className = 'msg-avatar';
-  avatar.textContent = speciesEmoji(student.species);
+  // typing indicator 也用神秘圖示
+  avatar.textContent = '🌿';
 
   const bubble = document.createElement('div');
   bubble.className = 'bubble typing-bubble';
