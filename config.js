@@ -4,7 +4,8 @@
  */
 
 // ▶ 將你的 Apps Script Web App URL 貼在這裡
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwBmAC-eWqSXeXPL3hStirw1x7gquMLF3GuhrXY1C36HGocqiSr8HxUyuQaWIYrnXn-/exec';
+const GAS_URL =
+  "https://script.google.com/macros/s/AKfycbzJZ26qJwDCnpsk4szGB8eOHDRd4Yi2agVy9Iohb-nVqVjWbju0oziqUVVeDUHcFvA8/exec";
 
 // ▶ 給 admin 頁面的額外匯出密碼 (可留空)
-const EXPORT_SECRET = '';
+const EXPORT_SECRET = "";
